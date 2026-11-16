@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBM vs. Competitors - Finance Dashboard</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; color: #1f2328;
+         max-width: 1100px; margin: 24px auto; padding: 0 16px; line-height: 1.5; }
+  h1 { margin-bottom: 4px; }
+  .muted { color: #57606a; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; background: #f7f8fa; }
+  .card h2 { font-size: 16px; margin: 0 0 8px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: right; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  tr.ibm { background: #eef4fb; font-weight: 600; }
+  .pos { color: #1a7f37; } .neg { color: #cf222e; }
+  .error { border: 1px solid #cf222e; padding: 12px; border-radius: 6px; }
+  .picker { margin: 20px 0 8px; display: flex; gap: 8px; align-items: center; }
+  .picker select, .picker button { font: inherit; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<h1>IBM vs. Competitors</h1>
+{% if error %}
+<p class="error">Market data is temporarily unavailable. Please try again shortly.</p>
+{% else %}
+<p class="muted">Yahoo Finance, USD adjusted close. Data as of last session: {{ last_date }}.</p>
+{% if ibm_rank %}
+<p>IBM ranks <strong>#{{ ibm_rank }} of {{ total }}</strong> on quarterly performance.</p>
+{% endif %}
+
+<div class="grid">
+{% for label, chart in charts %}
+  <div class="card"><h2>{{ label }} (% change)</h2>{{ chart }}</div>
+{% endfor %}
+</div>
+
+<form class="picker" method="get" action="/">
+  <label for="company">Company</label>
+  <select id="company" name="company">
+  {% for t, name in tickers.items() %}
+    <option value="{{ t }}"{% if t == selected %} selected{% endif %}>{{ name }} ({{ t }})</option>
+  {% endfor %}
+  </select>
+  <button type="submit">Show</button>
+</form>
+<div class="card" id="company-chart"><h2>{{ selected_name }}: % change by window</h2>{{ company_chart }}</div>
+
+<table>
+  <thead><tr><th>Ticker</th><th>Company</th><th>Last</th><th>Day %</th><th>7d %</th><th>Qtr %</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr{% if r.ticker == 'IBM' %} class="ibm"{% endif %}>
+      <td>{{ r.ticker }}</td><td>{{ r.company }}</td>
+      <td>{{ '%.2f'|format(r.last) if r.last is not none else 'n/a' }}</td>
+      {% for v in (r.day, r.week, r.quarter) %}
+      <td class="{{ 'pos' if v is not none and v >= 0 else 'neg' if v is not none else '' }}">{{ '%+.2f'|format(v) if v is not none else 'n/a' }}</td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+</body>
+</html>
